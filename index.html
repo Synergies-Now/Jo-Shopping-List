@@ -163,6 +163,27 @@
     border-bottom: 1px solid var(--border);
     padding: 18px 20px 14px;
   }
+  /* Title on the left, share button on the right. */
+  .head-row { display: flex; align-items: center; gap: 12px; }
+  .head-text { flex: 1; min-width: 0; }
+  .share-btn {
+    flex: 0 0 auto;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text-soft);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+  }
+  .share-btn:active { background: var(--card-2); color: var(--accent-deep); }
+  .share-btn svg { width: 17px; height: 17px; display: block; }
+  .share-btn[hidden] { display: none; }
+
   @media (prefers-color-scheme: dark) {
     header { background: rgba(34, 31, 26, 0.92); }
   }
@@ -516,8 +537,20 @@
 <body>
 
 <header>
-  <h1 id="pageTitle">Jo's Shopping List</h1>
-  <div class="subtitle" id="pageSubtitle">Choose what you need, then start.</div>
+  <div class="head-row">
+    <div class="head-text">
+      <h1 id="pageTitle">Jo's Shopping List</h1>
+      <div class="subtitle" id="pageSubtitle">Choose what you need, then start.</div>
+    </div>
+    <button class="share-btn" id="shareBtn" type="button" aria-label="Send this list to someone" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 16V4"></path>
+        <path d="M7 9l5-5 5 5"></path>
+        <path d="M5 14v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5"></path>
+      </svg>
+    </button>
+  </div>
 </header>
 
 <noscript>
@@ -933,6 +966,43 @@ function makeSection(secName, count) {
   return sec;
 }
 
+/* ── Sharing ──────────────────────────────────────────────────────
+   Builds the chosen items as plain text and hands them to the phone's
+   normal share sheet, so the list can go to Sean by message. Where that
+   isn't available (most desktop browsers) it copies to the clipboard. */
+function listAsText() {
+  const items = allItems().filter(it => state.selected[it.id]);
+  if (!items.length) return '';
+  const bySection = itemsBySection(items);
+  const lines = ["Jo's list — " + items.length + " item" + (items.length === 1 ? '' : 's'), ''];
+  SECTION_ORDER.forEach(secName => {
+    const secItems = bySection[secName];
+    if (!secItems || !secItems.length) return;
+    lines.push(secName.toUpperCase());
+    secItems.forEach(it => {
+      lines.push('- ' + it.name + (it.note ? ' (' + it.note + ')' : ''));
+    });
+    lines.push('');
+  });
+  return lines.join('\n').trim();
+}
+
+function shareList() {
+  const text = listAsText();
+  if (!text) { showToast('Nothing chosen yet', null); return; }
+  if (navigator.share) {
+    navigator.share({ title: "Jo's list", text: text }).catch(() => {});
+    return;
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text)
+      .then(() => showToast('List copied — paste it into a message', null))
+      .catch(() => showToast('Could not copy the list', null));
+    return;
+  }
+  showToast('Sharing is not available on this browser', null);
+}
+
 function render() {
   const main = document.getElementById('main');
   const title = document.getElementById('pageTitle');
@@ -940,6 +1010,9 @@ function render() {
   const bar = document.getElementById('bottomBar');
   main.innerHTML = '';
   bar.innerHTML = '';
+
+  document.getElementById('shareBtn').hidden =
+    Object.keys(state.selected).length === 0;
 
   if (state.mode === 'plan') {
     const count = Object.keys(state.selected).length;
@@ -1040,6 +1113,7 @@ function render() {
   }
 }
 
+document.getElementById('shareBtn').onclick = shareList;
 render();
 
 /* ---- Offline support: register the service worker ---- */
