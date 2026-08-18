@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Jo's List">
+<meta name="theme-color" content="#f6f3ee">
+<meta name="robots" content="noindex, nofollow">
+<meta name="description" content="Jo's shopping list — works offline once installed.">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<title>Jo's Shopping List</title>
+<style>
+  /* ── Palette ──────────────────────────────────────────────────────
+     Muted pastels on warm paper. Sage is the working colour; clay,
+     lavender, sand and slate mark the sections. Nothing saturated. */
+  :root {
+    --bg:          #f6f3ee;
+    --bg-deep:     #efeae2;
+    --card:        #fffdfa;
+    --card-2:      #f7f4ee;
+    --text:        #3b3833;
+    --text-soft:   #6d6760;
+    --muted:       #9a938a;
+    --border:      #e6ded3;
+    --border-soft: #efe8de;
+    --accent:      #8ba396;
+    --accent-deep: #718b7e;
+    --accent-ink:  #ffffff;
+    --clay:        #c3a49b;
+    --lavender:    #a79fb6;
+    --sand:        #cdba9c;
+    --slate:       #93a7b2;
+    --shadow:      0 1px 2px rgba(59, 56, 51, 0.04), 0 8px 24px rgba(59, 56, 51, 0.05);
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+    /* Burn effect, light version: a scorch that darkens the paper. */
+    --burn-blend: multiply;
+    --char-bg: linear-gradient(to top,
+        rgba(96, 82, 74, 0.42)    0%,
+        rgba(132, 116, 105, 0.26) 52%,
+        rgba(178, 160, 148, 0.10) 84%,
+        transparent 100%);
+    --front-bg:
+        radial-gradient(24% 30px at 11% 100%, rgba(178, 133, 121, 0.82), rgba(178, 133, 121, 0.22) 48%, transparent 74%),
+        radial-gradient(17% 19px at 28% 100%, rgba(152, 142, 172, 0.72), transparent 72%),
+        radial-gradient(27% 38px at 47% 100%, rgba(188, 150, 138, 0.86), rgba(188, 150, 138, 0.22) 50%, transparent 76%),
+        radial-gradient(19% 23px at 66% 100%, rgba(145, 133, 166, 0.70), transparent 72%),
+        radial-gradient(24% 32px at 86% 100%, rgba(183, 142, 130, 0.82), rgba(183, 142, 130, 0.21) 49%, transparent 74%),
+        linear-gradient(to top,
+          rgba(120, 92, 82, 0.88)   0px,
+          rgba(158, 126, 114, 0.55)  4px,
+          rgba(152, 142, 172, 0.18) 12px,
+          transparent               20px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:          #1c1b19;
+      --bg-deep:     #141311;
+      --card:        #252320;
+      --card-2:      #2b2825;
+      --text:        #ece7df;
+      --text-soft:   #b5ada2;
+      --muted:       #8b8377;
+      --border:      #383430;
+      --border-soft: #322e2a;
+      --accent:      #9db5a7;
+      --accent-deep: #b1c6ba;
+      --accent-ink:  #1c1b19;
+      --clay:        #cbaba2;
+      --lavender:    #b3aabf;
+      --sand:        #d3c1a4;
+      --slate:       #9db1bc;
+      --shadow:      0 1px 2px rgba(0, 0, 0, 0.25), 0 8px 24px rgba(0, 0, 0, 0.22);
+
+      /* Burn effect, dark version: the same shapes, glowing instead. */
+      --burn-blend: screen;
+      --char-bg: linear-gradient(to top,
+          rgba(10, 9, 8, 0.92)   0%,
+          rgba(38, 33, 30, 0.80) 55%,
+          rgba(70, 60, 55, 0.30) 86%,
+          transparent 100%);
+      --front-bg:
+          radial-gradient(24% 30px at 11% 100%, rgba(233, 205, 196, 0.80), rgba(203, 171, 162, 0.24) 48%, transparent 74%),
+          radial-gradient(17% 19px at 28% 100%, rgba(199, 191, 214, 0.70), transparent 72%),
+          radial-gradient(27% 38px at 47% 100%, rgba(226, 199, 190, 0.82), rgba(203, 171, 162, 0.22) 50%, transparent 76%),
+          radial-gradient(19% 23px at 66% 100%, rgba(190, 182, 205, 0.68), transparent 72%),
+          radial-gradient(24% 32px at 86% 100%, rgba(222, 196, 186, 0.78), rgba(196, 166, 157, 0.22) 49%, transparent 74%),
+          linear-gradient(to top,
+            rgba(246, 235, 228, 0.72)  0px,
+            rgba(212, 186, 176, 0.40)  5px,
+            rgba(179, 170, 191, 0.13) 13px,
+            transparent               21px);
+    }
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { background: var(--bg-deep); }
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    font-size: 16px;
+    /* Fill the viewport even on short screens (e.g. the "All done" state),
+       otherwise the darker html background shows as a band underneath. */
+    min-height: 100vh;
+    background: var(--bg);
+    background-attachment: fixed;
+    color: var(--text);
+    padding-bottom: 96px;
+    -webkit-text-size-adjust: 100%;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Header ── */
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: rgba(246, 243, 238, 0.92);
+    -webkit-backdrop-filter: saturate(1.4) blur(12px);
+            backdrop-filter: saturate(1.4) blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 18px 20px 14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    header { background: rgba(28, 27, 25, 0.92); }
+  }
+  h1 {
+    font-family: var(--serif);
+    font-size: 1.32rem;
+    font-weight: 400;
+    letter-spacing: 0.005em;
+    margin: 0 0 3px;
+    color: var(--text);
+  }
+  .subtitle {
+    font-size: 0.79rem;
+    color: var(--muted);
+    letter-spacing: 0.015em;
+  }
+
+  main { padding: 22px 20px 8px; max-width: 620px; margin: 0 auto; }
+
+  /* ── Sections ── */
+  .section { margin-bottom: 26px; }
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin: 0 0 9px 2px;
+    font-size: 0.685rem;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-soft);
+  }
+  .dot {
+    width: 6px;
+    height: 6px;
+    flex: 0 0 6px;
+    border-radius: 50%;
+    background: var(--dot, var(--accent));
+  }
+  .count-pill {
+    margin-left: auto;
+    font-size: 0.66rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    color: var(--accent-deep);
+    border: 1px solid var(--accent);
+    border-radius: 999px;
+    padding: 1px 8px;
+  }
+
+  /* ── Item cards ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .item {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    padding: 12px 15px;
+    border-bottom: 1px solid var(--border-soft);
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: background-color 0.15s ease;
+  }
+  .item:last-child { border-bottom: none; }
+  .item:active { background: var(--card-2); }
+  .shop .item { padding: 14px 15px; }
+
+  .box {
+    width: 19px;
+    height: 19px;
+    flex: 0 0 19px;
+    border-radius: 5px;
+    border: 1.5px solid var(--border);
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    line-height: 1;
+    color: var(--accent-ink);
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+  }
+  .item.checked .box { background: var(--accent); border-color: var(--accent); }
+  .shop .box { border-radius: 50%; }
+
+  .item-text { flex: 1; min-width: 0; }
+  .item-name {
+    font-size: 0.945rem;
+    font-weight: 450;
+    letter-spacing: 0.005em;
+    line-height: 1.3;
+  }
+  .item.checked .item-name { font-weight: 550; }
+  .item-note {
+    font-size: 0.755rem;
+    color: var(--muted);
+    margin-top: 2px;
+    line-height: 1.3;
+  }
+
+  /* ── Burn ─────────────────────────────────────────────────────────
+     Lifted from Marcel's list and recoloured. A front climbs the row
+     from the bottom: everything below it has already gone, a scorch
+     follows it up, and the emptied row then folds shut. On paper the
+     front darkens the page (multiply); in dark mode it glows (screen). */
+  .item.burning {
+    position: relative;
+    overflow: hidden;
+    min-height: 0;
+    pointer-events: none;
+    transition: none;
+  }
+  /* The row's contents are eaten bottom-up by a rising mask. Only the
+     real children are masked, so the front itself survives. */
+  .item.burning > * {
+    -webkit-mask-image: linear-gradient(to top,
+        transparent 0%, transparent 44%,
+        rgba(0,0,0,0.45) 49%, #000 57%, #000 100%);
+            mask-image: linear-gradient(to top,
+        transparent 0%, transparent 44%,
+        rgba(0,0,0,0.45) 49%, #000 57%, #000 100%);
+    -webkit-mask-size: 100% 200%;   mask-size: 100% 200%;
+    -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+    -webkit-animation: burn-eat 420ms cubic-bezier(.35,0,.55,1) forwards;
+            animation: burn-eat 420ms cubic-bezier(.35,0,.55,1) forwards;
+  }
+  @keyframes burn-eat {
+    from { -webkit-mask-position: 0% 0%;   mask-position: 0% 0%; }
+    to   { -webkit-mask-position: 0% 118%; mask-position: 0% 118%; }
+  }
+  /* Scorched ground left behind the front. */
+  .item.burning::before {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 100%;
+    transform: scaleY(0);
+    transform-origin: bottom center;
+    background: var(--char-bg);
+    animation: burn-char 420ms cubic-bezier(.35,0,.55,1) forwards;
+  }
+  @keyframes burn-char { to { transform: scaleY(1.06); } }
+  /* The front itself: ragged licks riding an upward-travelling edge. */
+  .item.burning::after {
+    content: '';
+    position: absolute;
+    left: -6%; right: -6%; bottom: 0;
+    height: 100%;
+    mix-blend-mode: var(--burn-blend);
+    background: var(--front-bg);
+    animation: burn-rise 420ms cubic-bezier(.35,0,.55,1) forwards,
+               burn-waver 130ms linear infinite;
+  }
+  @keyframes burn-rise {
+    from { transform: translateY(18px); opacity: 0; }
+    14%  { opacity: 1; }
+    88%  { opacity: 1; }
+    to   { transform: translateY(-100%); opacity: 0; }
+  }
+  @keyframes burn-waver {
+    0%   { filter: blur(0.30px) brightness(1.00); }
+    50%  { filter: blur(0.70px) brightness(1.04); }
+    100% { filter: blur(0.35px) brightness(1.00); }
+  }
+  /* Once burnt, the empty row folds shut. Height is set inline by JS. */
+  .item.collapsing {
+    padding-top: 0;
+    padding-bottom: 0;
+    border-bottom-width: 0;
+    opacity: 0;
+    transition: height 150ms cubic-bezier(.4,0,1,1),
+                padding 150ms cubic-bezier(.4,0,1,1),
+                opacity 150ms linear;
+  }
+
+  /* ── Add row ── */
+  .add-row { display: flex; gap: 8px; }
+  .add-row input {
+    flex: 1;
+    min-width: 0;
+    padding: 11px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 0.925rem;
+  }
+  .add-row input::placeholder { color: var(--muted); }
+  .add-row input:focus { outline: none; border-color: var(--accent); }
+  .add-row button {
+    width: 46px;
+    flex: 0 0 46px;
+    border-radius: 10px;
+    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  /* ── Empty state ── */
+  .empty-msg {
+    text-align: center;
+    color: var(--text-soft);
+    padding: 64px 20px;
+    font-family: var(--serif);
+    font-size: 1.12rem;
+  }
+
+  /* ── Bottom bar ── */
+  .bottom-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 11px 16px calc(11px + env(safe-area-inset-bottom));
+    background: rgba(239, 234, 226, 0.94);
+    -webkit-backdrop-filter: saturate(1.4) blur(12px);
+            backdrop-filter: saturate(1.4) blur(12px);
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 9px;
+    z-index: 10;
+  }
+  @media (prefers-color-scheme: dark) {
+    .bottom-bar { background: rgba(20, 19, 17, 0.94); }
+  }
+  .btn {
+    padding: 13px 12px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    font-family: var(--sans);
+    font-size: 0.9rem;
+    font-weight: 550;
+    letter-spacing: 0.01em;
+    text-align: center;
+    cursor: pointer;
+  }
+  .btn-primary {
+    flex: 1;
+    background: var(--accent);
+    color: var(--accent-ink);
+    border-color: var(--accent);
+  }
+  .btn-secondary {
+    flex: 0 0 auto;
+    padding-left: 20px;
+    padding-right: 20px;
+    background: transparent;
+    color: var(--text-soft);
+    border-color: var(--border);
+  }
+  .btn:disabled { opacity: 0.4; cursor: default; }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed;
+    left: 16px;
+    right: 16px;
+    bottom: 78px;
+    max-width: 588px;
+    margin: 0 auto;
+    background: var(--text);
+    color: var(--bg);
+    padding: 11px 16px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    z-index: 20;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+  }
+  .toast span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .toast button {
+    background: none;
+    border: none;
+    color: var(--bg);
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: 0.72rem;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .item { transition: none; }
+    .item.burning > *, .item.burning::before, .item.burning::after { animation: none; }
+    .item.collapsing { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1 id="pageTitle">Jo's Shopping List</h1>
+  <div class="subtitle" id="pageSubtitle">Choose what you need, then start.</div>
+</header>
+
+<noscript>
+  <div style="max-width:620px;margin:20px auto;padding:16px;border-radius:12px;background:#fffdfa;border:1px solid #e6ded3;color:#3b3833;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;">
+    <strong>This page needs JavaScript to show the list.</strong><br>
+    If you opened it from inside a chat app's preview, that preview blocks
+    scripts. Save the file, or open it in a normal browser, and it will work.
+  </div>
+</noscript>
+
+<main id="main"></main>
+<div id="toastHost"></div>
+<div class="bottom-bar" id="bottomBar"></div>
+
+<script>
+const STORAGE_KEY = 'groceryAppStateJo_v1';
+
+/* Each item is [name, note]. Notes are optional and kept short. */
+/* Sections run in Woolworths walking order: produce at the entrance,
+   then bakery and the chilled wall, the centre aisles, and frozen last
+   so it spends the least time out of the freezer. */
+const DEFAULT_SECTIONS = [
+  { name: "Fruit & Vegetables", colour: "var(--accent)", items: [
+    ["Bananas", ""],
+    ["Apples", ""],
+    ["Oranges", ""],
+    ["Lemons", ""],
+    ["Berries", "strawberries, blueberries"],
+    ["Avocados", ""],
+    ["Tomatoes", ""],
+    ["Cucumber", ""],
+    ["Carrots", ""],
+    ["Potatoes", ""],
+    ["Sweet potato", ""],
+    ["Pumpkin", ""],
+    ["Onions", ""],
+    ["Garlic", ""],
+    ["Rocket", ""],
+    ["Salad leaves", "bag or loose"],
+    ["Broccoli", ""],
+    ["Zucchini", ""],
+    ["Capsicum", ""],
+    ["Mushrooms", ""],
+    ["Fresh herbs", "parsley, coriander, basil"]
+  ]},
+  { name: "Bakery", colour: "var(--sand)", items: [
+    ["Bread", ""],
+    ["Bread rolls", ""],
+    ["Wraps or pita", ""],
+    ["Bagels", ""],
+    ["Croissants", ""]
+  ]},
+  { name: "Protein", colour: "var(--clay)", items: [
+    ["Firm tofu", ""],
+    ["Silken tofu", ""],
+    ["Marinated tofu", ""],
+    ["Tempeh", ""],
+    ["Halloumi", ""],
+    ["Falafel", ""],
+    ["Veggie sausages", ""],
+    ["Veggie burgers", ""]
+  ]},
+  { name: "Dairy & Chilled", colour: "var(--slate)", items: [
+    ["Milk", ""],
+    ["Butter", ""],
+    ["Eggs", "free range"],
+    ["Cheddar", ""],
+    ["Parmesan", "check for vegetarian rennet"],
+    ["Feta", ""],
+    ["Yoghurt", ""],
+    ["Cream", ""],
+    ["Dips", "hummus, tzatziki"],
+    ["Fresh pasta", ""]
+  ]},
+  { name: "Pantry", colour: "var(--lavender)", items: [
+    ["Rice", ""],
+    ["Pasta", ""],
+    ["Noodles", ""],
+    ["Tinned tomatoes", ""],
+    ["Tinned beans", ""],
+    ["Chickpeas", ""],
+    ["Lentils", ""],
+    ["Coconut milk", ""],
+    ["Stock", "vegetable"],
+    ["Olive oil", ""],
+    ["Vinegar", ""],
+    ["Salt & pepper", ""],
+    ["Spices", ""],
+    ["Soy sauce", ""],
+    ["Honey", ""],
+    ["Vegemite", ""],
+    ["Peanut butter", ""],
+    ["Jam", ""],
+    ["Cereal", ""],
+    ["Oats", ""],
+    ["Flour", ""],
+    ["Sugar", ""],
+    ["Tea", ""],
+    ["Coffee", ""],
+    ["Nuts", ""],
+    ["Crackers", ""],
+    ["Biscuits", ""]
+  ]},
+  { name: "Drinks", colour: "var(--accent)", items: [
+    ["Sparkling water", ""],
+    ["Juice", ""],
+    ["Soft drink", ""],
+    ["Wine", ""],
+    ["Beer", ""]
+  ]},
+  { name: "Household", colour: "var(--sand)", items: [
+    ["Toilet paper", ""],
+    ["Paper towel", ""],
+    ["Dishwashing liquid", ""],
+    ["Dishwasher tablets", ""],
+    ["Laundry powder", ""],
+    ["Bin bags", ""],
+    ["Cling wrap", ""],
+    ["Foil", ""],
+    ["Surface spray", ""],
+    ["Sponges", ""]
+  ]},
+  { name: "Toiletries", colour: "var(--clay)", items: [
+    ["Shampoo", ""],
+    ["Conditioner", ""],
+    ["Body wash", ""],
+    ["Hand soap", ""],
+    ["Toothpaste", ""],
+    ["Deodorant", ""],
+    ["Moisturiser", ""],
+    ["Sunscreen", ""],
+    ["Razors", ""],
+    ["Tissues", ""]
+  ]},
+  { name: "Frozen", colour: "var(--slate)", items: [
+    ["Frozen peas", ""],
+    ["Frozen vegetables", ""],
+    ["Frozen spinach", ""],
+    ["Frozen berries", ""],
+    ["Chips", ""],
+    ["Ice cream", ""],
+    ["Frozen pizza", ""]
+  ]}
+];
+
+function slugify(s) {
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+}
+
+function buildMasterItems() {
+  const items = [];
+  DEFAULT_SECTIONS.forEach(sec => {
+    sec.items.forEach(([name, note]) => {
+      items.push({
+        id: 'd-' + slugify(sec.name) + '-' + slugify(name),
+        name,
+        note: note || '',
+        section: sec.name
+      });
+    });
+  });
+  return items;
+}
+
+const MASTER_ITEMS = buildMasterItems();
+const SECTION_COLOUR = {};
+DEFAULT_SECTIONS.forEach(s => { SECTION_COLOUR[s.name] = s.colour; });
+const SECTION_ORDER = DEFAULT_SECTIONS.map(s => s.name).concat(['Anything else']);
+SECTION_COLOUR['Anything else'] = 'var(--lavender)';
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const s = JSON.parse(raw);
+      s.selected = s.selected || {};
+      s.customItems = s.customItems || [];
+      s.mode = s.mode === 'shop' ? 'shop' : 'plan';
+      return s;
+    }
+  } catch (e) {}
+  return { mode: 'plan', selected: {}, customItems: [], lastRemoved: null };
+}
+
+function saveState() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+}
+
+let state = loadState();
+
+function allItems() {
+  return MASTER_ITEMS.concat(state.customItems || []);
+}
+
+function itemsBySection(list) {
+  const map = {};
+  list.forEach(it => {
+    if (!map[it.section]) map[it.section] = [];
+    map[it.section].push(it);
+  });
+  return map;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function rowEl(id) {
+  return document.querySelector('[data-id="' + CSS.escape(id) + '"]');
+}
+
+function toggleSelect(id) {
+  if (state.selected[id]) delete state.selected[id];
+  else state.selected[id] = true;
+  saveState();
+  render();
+}
+
+/* Burn a row away, then run `done`. The row's height is pinned first so
+   it has something to collapse from. */
+function burnRow(el, done) {
+  if (!el || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    done();
+    return;
+  }
+  el.style.height = el.offsetHeight + 'px';
+  el.classList.add('burning');
+  setTimeout(function () {
+    el.classList.add('collapsing');
+    el.style.height = '0px';
+  }, 320);
+  setTimeout(done, 470);
+}
+
+function pickUpItem(id, name) {
+  burnRow(rowEl(id), function () {
+    delete state.selected[id];
+    state.lastRemoved = { id, name };
+    saveState();
+    render();
+    showToast(name + ' — in the trolley', undoPickUp);
+  });
+}
+
+function undoPickUp() {
+  if (!state.lastRemoved) return;
+  state.selected[state.lastRemoved.id] = true;
+  state.lastRemoved = null;
+  saveState();
+  render();
+}
+
+function showToast(msg, undoFn) {
+  const host = document.getElementById('toastHost');
+  host.innerHTML = '<div class="toast"><span>' + escapeHtml(msg) + '</span>' +
+    (undoFn ? '<button id="toastUndo">Undo</button>' : '') + '</div>';
+  if (undoFn) {
+    document.getElementById('toastUndo').onclick = () => { undoFn(); host.innerHTML = ''; };
+  }
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => { host.innerHTML = ''; }, 4000);
+}
+
+function addCustomItem() {
+  const input = document.getElementById('customInput');
+  if (!input) return;
+  const name = input.value.trim();
+  if (!name) return;
+  const id = 'c-' + Date.now();
+  state.customItems = state.customItems || [];
+  state.customItems.push({ id, name, note: '', section: 'Anything else' });
+  state.selected[id] = true;
+  input.value = '';
+  saveState();
+  render();
+  const again = document.getElementById('customInput');
+  if (again) again.focus();
+}
+
+function startShopping() {
+  state.mode = 'shop';
+  state.lastRemoved = null;
+  saveState();
+  render();
+  window.scrollTo(0, 0);
+}
+
+function backToPlan() {
+  state.mode = 'plan';
+  saveState();
+  render();
+  window.scrollTo(0, 0);
+}
+
+function resetSelections() {
+  state.selected = {};
+  state.lastRemoved = null;
+  saveState();
+  render();
+}
+
+function newList() {
+  state.selected = {};
+  state.customItems = [];
+  state.lastRemoved = null;
+  state.mode = 'plan';
+  saveState();
+  render();
+  window.scrollTo(0, 0);
+}
+
+function makeRow(it, checked, onClick) {
+  const row = document.createElement('div');
+  row.className = 'item' + (checked ? ' checked' : '');
+  row.setAttribute('data-id', it.id);
+  row.innerHTML =
+    '<div class="box">' + (checked ? '&#10003;' : '') + '</div>' +
+    '<div class="item-text">' +
+      '<div class="item-name">' + escapeHtml(it.name) + '</div>' +
+      (it.note ? '<div class="item-note">' + escapeHtml(it.note) + '</div>' : '') +
+    '</div>';
+  row.onclick = onClick;
+  return row;
+}
+
+function makeSection(secName, count) {
+  const sec = document.createElement('div');
+  sec.className = 'section';
+  const title = document.createElement('div');
+  title.className = 'section-title';
+  title.innerHTML =
+    '<span class="dot" style="--dot: ' + (SECTION_COLOUR[secName] || 'var(--accent)') + '"></span>' +
+    '<span>' + escapeHtml(secName) + '</span>' +
+    (count ? '<span class="count-pill">' + count + '</span>' : '');
+  sec.appendChild(title);
+  return sec;
+}
+
+function render() {
+  const main = document.getElementById('main');
+  const title = document.getElementById('pageTitle');
+  const subtitle = document.getElementById('pageSubtitle');
+  const bar = document.getElementById('bottomBar');
+  main.innerHTML = '';
+  bar.innerHTML = '';
+
+  if (state.mode === 'plan') {
+    const count = Object.keys(state.selected).length;
+    title.textContent = "Jo's Shopping List";
+    subtitle.textContent = count
+      ? count + (count === 1 ? ' item' : ' items') + ' on the list'
+      : 'Choose what you need, then start.';
+
+    const bySection = itemsBySection(allItems());
+    SECTION_ORDER.forEach(secName => {
+      const secItems = bySection[secName];
+      if (!secItems || !secItems.length) return;
+      const chosen = secItems.filter(it => state.selected[it.id]).length;
+      const sec = makeSection(secName, chosen);
+      const card = document.createElement('div');
+      card.className = 'card';
+      secItems.forEach(it => {
+        card.appendChild(makeRow(it, !!state.selected[it.id], () => toggleSelect(it.id)));
+      });
+      sec.appendChild(card);
+      main.appendChild(sec);
+    });
+
+    const addSec = makeSection('Add your own', 0);
+    const addRow = document.createElement('div');
+    addRow.className = 'add-row';
+    addRow.innerHTML =
+      '<input id="customInput" type="text" autocomplete="off" placeholder="Something not on the list" />' +
+      '<button id="customAdd" aria-label="Add item">+</button>';
+    addSec.appendChild(addRow);
+    main.appendChild(addSec);
+    document.getElementById('customAdd').onclick = addCustomItem;
+    document.getElementById('customInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') addCustomItem();
+    });
+
+    const clearBtn = document.createElement('button');
+    clearBtn.className = 'btn btn-secondary';
+    clearBtn.textContent = 'Clear';
+    clearBtn.disabled = !count;
+    clearBtn.onclick = resetSelections;
+    const startBtn = document.createElement('button');
+    startBtn.className = 'btn btn-primary';
+    startBtn.textContent = count ? 'Start shopping · ' + count : 'Start shopping';
+    startBtn.disabled = !count;
+    startBtn.onclick = startShopping;
+    bar.appendChild(clearBtn);
+    bar.appendChild(startBtn);
+
+  } else {
+    const items = allItems().filter(it => state.selected[it.id]);
+    const remaining = items.length;
+    title.textContent = 'Shopping';
+    subtitle.textContent = remaining
+      ? remaining + ' left — tap each one as it goes in'
+      : 'That is everything.';
+
+    if (!remaining) {
+      main.innerHTML = '<div class="empty-msg">All done.</div>';
+    } else {
+      const bySection = itemsBySection(items);
+      SECTION_ORDER.forEach(secName => {
+        const secItems = bySection[secName];
+        if (!secItems || !secItems.length) return;
+        const sec = makeSection(secName, 0);
+        const card = document.createElement('div');
+        card.className = 'card shop';
+        secItems.forEach(it => {
+          card.appendChild(makeRow(it, false, () => pickUpItem(it.id, it.name)));
+        });
+        sec.appendChild(card);
+        main.appendChild(sec);
+      });
+    }
+
+    const editBtn = document.createElement('button');
+    editBtn.className = 'btn btn-secondary';
+    editBtn.textContent = 'Edit list';
+    editBtn.onclick = backToPlan;
+    bar.appendChild(editBtn);
+
+    const doneBtn = document.createElement('button');
+    doneBtn.className = 'btn btn-primary';
+    doneBtn.textContent = remaining ? 'Finish' : 'Start a new list';
+    doneBtn.onclick = newList;
+    bar.appendChild(doneBtn);
+  }
+}
+
+render();
+
+/* ---- Offline support: register the service worker ---- */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('sw.js').catch(function () {
+      /* No offline caching available — the app still works normally. */
+    });
+  });
+}
+</script>
+</body>
+</html>
