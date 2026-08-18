@@ -657,6 +657,34 @@ const DEFAULT_SECTIONS = [
   ]}
 ];
 
+/* Auto-sorting for anything typed into "Add your own" — no meat/fish
+   bucket, since Jo is vegetarian, and snacky pantry items (chips,
+   chocolate, biscuits) file under Pantry rather than a separate
+   Snacks section, since Jo's list doesn't have one. */
+const KEYWORDS = {
+  "Fruit & Vegetables": ["apple","banana","orange","mandarin","kiwi","avocado","tomato","lettuce","spinach","kale","broccoli","cauliflower","cabbage","carrot","onion","garlic","ginger","potato","sweet potato","kumara","pumpkin","zucchini","courgette","capsicum","cucumber","celery","mushroom","leek","green bean","corn","lemon","lime","grape","strawberr","blueberr","raspberr","peach","pear","plum","melon","mango","pineapple","cherry","herb","parsley","coriander","basil","mint","salad","greens","sprout","beetroot","radish","asparagus","rocket","fruit","veg"],
+  "Bakery": ["bread","bagel","wrap","tortilla","bun","roll","croissant","muffin","pita","baguette","sourdough","crumpet","donut"],
+  "Protein": ["tofu","tempeh","haloumi","halloumi","falafel","seitan","quorn","veggie sausage","veggie burger","veggie mince","plant-based","plant based","meat-free","meat free","meat substitute"],
+  "Dairy & Chilled": ["milk","cheese","yoghurt","yogurt","butter","margarine","cream","custard","egg","feta","mozzarella","parmesan","juice","hummus","dip","fresh pasta"],
+  "Pantry": ["rice","pasta","noodle","udon","miso","soup","cereal","oat","muesli","flour","sugar","honey","jam","syrup","sauce","paste","stock","tin","can","oil","vinegar","salt","pepper","spice","cumin","curry","tea","coffee","nuts","almond","cashew","walnut","seed","peanut butter","vegemite","marmite","biscuit","cracker","couscous","quinoa","lentil","chickpea","bean","baking","vanilla","cocoa","chips","chocolate","lolly","lollies","candy","gum","snack","muesli bar","protein bar","popcorn"],
+  "Frozen": ["frozen","ice cream","icecream","hash brown","dumpling","ice block","pizza"],
+  "Drinks": ["soft drink","fizzy","coke","cordial","electrolyte","powerade","energy drink","sparkling water","beer","wine","cider","water"],
+  "Household": ["toilet paper","paper towel","tissue","dishwash","detergent","washing powder","laundry","bleach","cleaner","spray","sponge","bin","rubbish bag","plastic bag","glad wrap","cling","foil","sanitiser","sanitizer","air freshener","soap dispenser","batteries","light bulb","candle"],
+  "Toiletries": ["body wash","shampoo","conditioner","moisturis","moisturiz","toothbrush","toothpaste","floss","deodorant","shaving","razor","blade","sunscreen","soap","cotton","panadol","vitamin","tampon","pad"]
+};
+
+function guessCategory(rawName) {
+  const name = rawName.toLowerCase().trim();
+  if (/\bfrozen\b/.test(name)) return "Frozen";
+  let best = null, bestLen = 0;
+  for (const cat in KEYWORDS) {
+    for (const kw of KEYWORDS[cat]) {
+      if (name.includes(kw) && kw.length > bestLen) { best = cat; bestLen = kw.length; }
+    }
+  }
+  return best || "Anything else";
+}
+
 function slugify(s) {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 }
@@ -813,13 +841,15 @@ function addCustomItem() {
   if (!input) return;
   const name = input.value.trim();
   if (!name) return;
+  const section = guessCategory(name);
   const id = 'c-' + Date.now();
   state.customItems = state.customItems || [];
-  state.customItems.push({ id, name, note: '', section: 'Anything else' });
+  state.customItems.push({ id, name, note: '', section });
   state.selected[id] = true;
   input.value = '';
   saveState();
   render();
+  showToast('Added to ' + section, null);
   const again = document.getElementById('customInput');
   if (again) again.focus();
 }
