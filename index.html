@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Jo's List">
-<meta name="theme-color" content="#f6f3ee">
+<meta name="theme-color" content="#fdf8ec">
 <meta name="robots" content="noindex, nofollow">
 <meta name="description" content="Jo's shopping list — works offline once installed.">
 <link rel="manifest" href="manifest.json">
@@ -16,26 +16,30 @@
 <title>Jo's Shopping List</title>
 <style>
   /* ── Palette ──────────────────────────────────────────────────────
-     Muted pastels on warm paper. Sage is the working colour; clay,
-     lavender, sand and slate mark the sections. Nothing saturated. */
+     Soft green, orange and purple pastels on a cream ground. Green is
+     the working colour; the three families mark the sections. */
   :root {
-    --bg:          #f6f3ee;
-    --bg-deep:     #efeae2;
-    --card:        #fffdfa;
-    --card-2:      #f7f4ee;
-    --text:        #3b3833;
-    --text-soft:   #6d6760;
-    --muted:       #9a938a;
-    --border:      #e6ded3;
-    --border-soft: #efe8de;
-    --accent:      #8ba396;
-    --accent-deep: #718b7e;
-    --accent-ink:  #ffffff;
-    --clay:        #c3a49b;
-    --lavender:    #a79fb6;
-    --sand:        #cdba9c;
-    --slate:       #93a7b2;
-    --shadow:      0 1px 2px rgba(59, 56, 51, 0.04), 0 8px 24px rgba(59, 56, 51, 0.05);
+    --bg:          #fdf8ec;
+    --bg-deep:     #f7f0de;
+    --card:        #fffefa;
+    --card-2:      #fbf5e8;
+    --text:        #40392f;
+    --text-soft:   #6f6656;
+    --muted:       #7b7059;
+    --border:      #ece0c8;
+    --border-soft: #f4ecd9;
+    --accent:      #7fb98d;
+    --accent-deep: #5f9d70;
+    --accent-ink:  #2f3a32;
+    /* Section colours: soft green, orange and purple, plus a lighter
+       shade of each so nine sections all read as distinct. */
+    --green:       #8fc39b;
+    --green-soft:  #aed6b6;
+    --orange:      #efab77;
+    --orange-soft: #f4c39a;
+    --purple:      #b2a0da;
+    --purple-soft: #c7b8e5;
+    --shadow:      0 1px 2px rgba(64, 57, 47, 0.05), 0 8px 24px rgba(64, 57, 47, 0.06);
 
     --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
     --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -43,20 +47,20 @@
     /* Burn effect, light version: a scorch that darkens the paper. */
     --burn-blend: multiply;
     --char-bg: linear-gradient(to top,
-        rgba(96, 82, 74, 0.42)    0%,
-        rgba(132, 116, 105, 0.26) 52%,
-        rgba(178, 160, 148, 0.10) 84%,
+        rgba(104, 84, 60, 0.40)   0%,
+        rgba(140, 118, 88, 0.24) 52%,
+        rgba(184, 162, 128, 0.09) 84%,
         transparent 100%);
     --front-bg:
-        radial-gradient(24% 30px at 11% 100%, rgba(178, 133, 121, 0.82), rgba(178, 133, 121, 0.22) 48%, transparent 74%),
-        radial-gradient(17% 19px at 28% 100%, rgba(152, 142, 172, 0.72), transparent 72%),
-        radial-gradient(27% 38px at 47% 100%, rgba(188, 150, 138, 0.86), rgba(188, 150, 138, 0.22) 50%, transparent 76%),
-        radial-gradient(19% 23px at 66% 100%, rgba(145, 133, 166, 0.70), transparent 72%),
-        radial-gradient(24% 32px at 86% 100%, rgba(183, 142, 130, 0.82), rgba(183, 142, 130, 0.21) 49%, transparent 74%),
+        radial-gradient(24% 30px at 11% 100%, rgba(224, 148, 92, 0.88), rgba(224, 148, 92, 0.24) 48%, transparent 74%),
+        radial-gradient(17% 19px at 28% 100%, rgba(150, 128, 198, 0.78), transparent 72%),
+        radial-gradient(27% 38px at 47% 100%, rgba(232, 160, 100, 0.92), rgba(232, 160, 100, 0.24) 50%, transparent 76%),
+        radial-gradient(19% 23px at 66% 100%, rgba(142, 120, 192, 0.76), transparent 72%),
+        radial-gradient(24% 32px at 86% 100%, rgba(228, 154, 96, 0.88), rgba(228, 154, 96, 0.23) 49%, transparent 74%),
         linear-gradient(to top,
-          rgba(120, 92, 82, 0.88)   0px,
-          rgba(158, 126, 114, 0.55)  4px,
-          rgba(152, 142, 172, 0.18) 12px,
+          rgba(176, 108, 52, 0.90)  0px,
+          rgba(206, 142, 88, 0.56)   4px,
+          rgba(150, 128, 198, 0.20) 12px,
           transparent               20px);
 
     /* Burn effect, delete variant: cold stone-grey ash, no colour. */
@@ -76,22 +80,24 @@
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg:          #1c1b19;
-      --bg-deep:     #141311;
-      --card:        #252320;
-      --card-2:      #2b2825;
-      --text:        #ece7df;
-      --text-soft:   #b5ada2;
-      --muted:       #8b8377;
-      --border:      #383430;
-      --border-soft: #322e2a;
-      --accent:      #9db5a7;
-      --accent-deep: #b1c6ba;
-      --accent-ink:  #1c1b19;
-      --clay:        #cbaba2;
-      --lavender:    #b3aabf;
-      --sand:        #d3c1a4;
-      --slate:       #9db1bc;
+      --bg:          #221f1a;
+      --bg-deep:     #1a1814;
+      --card:        #2c2822;
+      --card-2:      #332e27;
+      --text:        #f0e9dc;
+      --text-soft:   #bcb3a2;
+      --muted:       #9a9180;
+      --border:      #403a31;
+      --border-soft: #3a352d;
+      --accent:      #93c7a0;
+      --accent-deep: #a9d6b4;
+      --accent-ink:  #221f1a;
+      --green:       #93c7a0;
+      --green-soft:  #aed6b6;
+      --orange:      #f0b184;
+      --orange-soft: #f5c8a4;
+      --purple:      #bcabe0;
+      --purple-soft: #cfc2ea;
       --shadow:      0 1px 2px rgba(0, 0, 0, 0.25), 0 8px 24px rgba(0, 0, 0, 0.22);
 
       /* Burn effect, dark version: the same shapes, glowing instead. */
@@ -102,15 +108,15 @@
           rgba(70, 60, 55, 0.30) 86%,
           transparent 100%);
       --front-bg:
-          radial-gradient(24% 30px at 11% 100%, rgba(233, 205, 196, 0.80), rgba(203, 171, 162, 0.24) 48%, transparent 74%),
-          radial-gradient(17% 19px at 28% 100%, rgba(199, 191, 214, 0.70), transparent 72%),
-          radial-gradient(27% 38px at 47% 100%, rgba(226, 199, 190, 0.82), rgba(203, 171, 162, 0.22) 50%, transparent 76%),
-          radial-gradient(19% 23px at 66% 100%, rgba(190, 182, 205, 0.68), transparent 72%),
-          radial-gradient(24% 32px at 86% 100%, rgba(222, 196, 186, 0.78), rgba(196, 166, 157, 0.22) 49%, transparent 74%),
+          radial-gradient(24% 30px at 11% 100%, rgba(248, 196, 146, 0.84), rgba(232, 160, 100, 0.26) 48%, transparent 74%),
+          radial-gradient(17% 19px at 28% 100%, rgba(202, 186, 240, 0.74), transparent 72%),
+          radial-gradient(27% 38px at 47% 100%, rgba(250, 204, 158, 0.88), rgba(232, 160, 100, 0.24) 50%, transparent 76%),
+          radial-gradient(19% 23px at 66% 100%, rgba(192, 176, 234, 0.72), transparent 72%),
+          radial-gradient(24% 32px at 86% 100%, rgba(246, 192, 142, 0.82), rgba(228, 154, 96, 0.24) 49%, transparent 74%),
           linear-gradient(to top,
-            rgba(246, 235, 228, 0.72)  0px,
-            rgba(212, 186, 176, 0.40)  5px,
-            rgba(179, 170, 191, 0.13) 13px,
+            rgba(255, 236, 212, 0.76)  0px,
+            rgba(240, 186, 132, 0.44)  5px,
+            rgba(188, 171, 224, 0.15) 13px,
             transparent               21px);
 
       /* Burn effect, delete variant: cold smoke, no colour. */
@@ -151,14 +157,14 @@
     position: sticky;
     top: 0;
     z-index: 10;
-    background: rgba(246, 243, 238, 0.92);
+    background: rgba(253, 248, 236, 0.92);
     -webkit-backdrop-filter: saturate(1.4) blur(12px);
             backdrop-filter: saturate(1.4) blur(12px);
     border-bottom: 1px solid var(--border);
     padding: 18px 20px 14px;
   }
   @media (prefers-color-scheme: dark) {
-    header { background: rgba(28, 27, 25, 0.92); }
+    header { background: rgba(34, 31, 26, 0.92); }
   }
   h1 {
     font-family: var(--serif);
@@ -428,7 +434,7 @@
     left: 0;
     right: 0;
     padding: 11px 16px calc(11px + env(safe-area-inset-bottom));
-    background: rgba(239, 234, 226, 0.94);
+    background: rgba(247, 240, 222, 0.94);
     -webkit-backdrop-filter: saturate(1.4) blur(12px);
             backdrop-filter: saturate(1.4) blur(12px);
     border-top: 1px solid var(--border);
@@ -437,7 +443,7 @@
     z-index: 10;
   }
   @media (prefers-color-scheme: dark) {
-    .bottom-bar { background: rgba(20, 19, 17, 0.94); }
+    .bottom-bar { background: rgba(26, 24, 20, 0.94); }
   }
   .btn {
     padding: 13px 12px;
@@ -515,7 +521,7 @@
 </header>
 
 <noscript>
-  <div style="max-width:620px;margin:20px auto;padding:16px;border-radius:12px;background:#fffdfa;border:1px solid #e6ded3;color:#3b3833;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;">
+  <div style="max-width:620px;margin:20px auto;padding:16px;border-radius:12px;background:#fffefa;border:1px solid #ece0c8;color:#40392f;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;">
     <strong>This page needs JavaScript to show the list.</strong><br>
     If you opened it from inside a chat app's preview, that preview blocks
     scripts. Save the file, or open it in a normal browser, and it will work.
@@ -534,7 +540,7 @@ const STORAGE_KEY = 'groceryAppStateJo_v1';
    then bakery and the chilled wall, the centre aisles, and frozen last
    so it spends the least time out of the freezer. */
 const DEFAULT_SECTIONS = [
-  { name: "Fruit & Vegetables", colour: "var(--accent)", items: [
+  { name: "Fruit & Vegetables", colour: "var(--green)", items: [
     ["Bananas", ""],
     ["Apples", ""],
     ["Oranges", ""],
@@ -557,14 +563,14 @@ const DEFAULT_SECTIONS = [
     ["Mushrooms", ""],
     ["Fresh herbs", "parsley, coriander, basil"]
   ]},
-  { name: "Bakery", colour: "var(--sand)", items: [
+  { name: "Bakery", colour: "var(--orange)", items: [
     ["Bread", ""],
     ["Bread rolls", ""],
     ["Wraps or pita", ""],
     ["Bagels", ""],
     ["Croissants", ""]
   ]},
-  { name: "Protein", colour: "var(--clay)", items: [
+  { name: "Protein", colour: "var(--purple)", items: [
     ["Firm tofu", ""],
     ["Silken tofu", ""],
     ["Marinated tofu", ""],
@@ -574,7 +580,7 @@ const DEFAULT_SECTIONS = [
     ["Veggie sausages", ""],
     ["Veggie burgers", ""]
   ]},
-  { name: "Dairy & Chilled", colour: "var(--slate)", items: [
+  { name: "Dairy & Chilled", colour: "var(--green-soft)", items: [
     ["Milk", ""],
     ["Butter", ""],
     ["Eggs", "free range"],
@@ -586,7 +592,7 @@ const DEFAULT_SECTIONS = [
     ["Dips", "hummus, tzatziki"],
     ["Fresh pasta", ""]
   ]},
-  { name: "Pantry", colour: "var(--lavender)", items: [
+  { name: "Pantry", colour: "var(--orange-soft)", items: [
     ["Rice", ""],
     ["Pasta", ""],
     ["Noodles", ""],
@@ -615,14 +621,14 @@ const DEFAULT_SECTIONS = [
     ["Crackers", ""],
     ["Biscuits", ""]
   ]},
-  { name: "Drinks", colour: "var(--accent)", items: [
+  { name: "Drinks", colour: "var(--purple-soft)", items: [
     ["Sparkling water", ""],
     ["Juice", ""],
     ["Soft drink", ""],
     ["Wine", ""],
     ["Beer", ""]
   ]},
-  { name: "Household", colour: "var(--sand)", items: [
+  { name: "Household", colour: "var(--green)", items: [
     ["Toilet paper", ""],
     ["Paper towel", ""],
     ["Dishwashing liquid", ""],
@@ -634,7 +640,7 @@ const DEFAULT_SECTIONS = [
     ["Surface spray", ""],
     ["Sponges", ""]
   ]},
-  { name: "Toiletries", colour: "var(--clay)", items: [
+  { name: "Toiletries", colour: "var(--orange)", items: [
     ["Shampoo", ""],
     ["Conditioner", ""],
     ["Body wash", ""],
@@ -646,7 +652,7 @@ const DEFAULT_SECTIONS = [
     ["Razors", ""],
     ["Tissues", ""]
   ]},
-  { name: "Frozen", colour: "var(--slate)", items: [
+  { name: "Frozen", colour: "var(--purple)", items: [
     ["Frozen peas", ""],
     ["Frozen vegetables", ""],
     ["Frozen spinach", ""],
@@ -708,7 +714,7 @@ const MASTER_ITEMS = buildMasterItems();
 const SECTION_COLOUR = {};
 DEFAULT_SECTIONS.forEach(s => { SECTION_COLOUR[s.name] = s.colour; });
 const SECTION_ORDER = DEFAULT_SECTIONS.map(s => s.name).concat(['Anything else']);
-SECTION_COLOUR['Anything else'] = 'var(--lavender)';
+SECTION_COLOUR['Anything else'] = 'var(--purple-soft)';
 
 function loadState() {
   try {

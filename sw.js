@@ -1,7 +1,7 @@
 /* Service worker — makes the shopping list work with no internet.
    Bump CACHE_NAME whenever you upload a new version of the app. */
 
-const CACHE_NAME = 'jo-shopping-v2';
+const CACHE_NAME = 'jo-shopping-v3';
 
 const ASSETS = [
   './',
