@@ -58,6 +58,21 @@
           rgba(158, 126, 114, 0.55)  4px,
           rgba(152, 142, 172, 0.18) 12px,
           transparent               20px);
+
+    /* Burn effect, delete variant: cold stone-grey ash, no colour. */
+    --char-bg-ash: linear-gradient(to top,
+        rgba(90, 88, 84, 0.40)  0%,
+        rgba(120, 118, 113, 0.24) 55%,
+        rgba(160, 157, 150, 0.09) 85%,
+        transparent 100%);
+    --front-bg-ash:
+        radial-gradient(24% 28px at 14% 100%, rgba(150, 147, 141, 0.62), transparent 72%),
+        radial-gradient(26% 34px at 48% 100%, rgba(140, 137, 131, 0.60), transparent 74%),
+        radial-gradient(22% 24px at 82% 100%, rgba(132, 129, 123, 0.56), transparent 72%),
+        linear-gradient(to top,
+          rgba(110, 107, 102, 0.75) 0px,
+          rgba(140, 137, 131, 0.40) 8px,
+          transparent               18px);
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -97,6 +112,20 @@
             rgba(212, 186, 176, 0.40)  5px,
             rgba(179, 170, 191, 0.13) 13px,
             transparent               21px);
+
+      /* Burn effect, delete variant: cold smoke, no colour. */
+      --char-bg-ash: linear-gradient(to top,
+          rgba(6, 6, 6, 0.88)    0%,
+          rgba(28, 27, 26, 0.72) 58%,
+          transparent 100%);
+      --front-bg-ash:
+          radial-gradient(24% 28px at 14% 100%, rgba(210, 207, 200, 0.48), transparent 72%),
+          radial-gradient(26% 34px at 48% 100%, rgba(196, 193, 186, 0.46), transparent 74%),
+          radial-gradient(22% 24px at 82% 100%, rgba(180, 177, 170, 0.42), transparent 72%),
+          linear-gradient(to top,
+            rgba(224, 221, 214, 0.55) 0px,
+            rgba(160, 157, 150, 0.26) 8px,
+            transparent               18px);
     }
   }
 
@@ -189,17 +218,58 @@
   .item {
     display: flex;
     align-items: center;
-    gap: 13px;
-    padding: 12px 15px;
+    gap: 2px;
+    padding: 12px 8px 12px 15px;
     border-bottom: 1px solid var(--border-soft);
-    cursor: pointer;
     user-select: none;
     -webkit-user-select: none;
-    transition: background-color 0.15s ease;
   }
   .item:last-child { border-bottom: none; }
-  .item:active { background: var(--card-2); }
   .shop .item { padding: 14px 15px; }
+
+  .tap-zone {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    flex: 1;
+    min-width: 0;
+    cursor: pointer;
+    padding: 2px 0;
+  }
+  .tap-zone:active { opacity: 0.55; }
+
+  .del-btn {
+    flex: 0 0 auto;
+    width: 34px;
+    height: 34px;
+    border: none;
+    border-radius: 8px;
+    background: none;
+    color: var(--muted);
+    font-size: 1.1rem;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  .del-btn:active { background: var(--card-2); color: var(--clay); }
+
+  .restore-btn {
+    display: block;
+    width: 100%;
+    margin-top: 4px;
+    padding: 11px;
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+    background: none;
+    color: var(--text-soft);
+    font-family: var(--sans);
+    font-size: 0.82rem;
+    text-align: center;
+    cursor: pointer;
+  }
+  .restore-btn:active { background: var(--card-2); }
 
   .box {
     width: 19px;
@@ -297,6 +367,12 @@
     0%   { filter: blur(0.30px) brightness(1.00); }
     50%  { filter: blur(0.70px) brightness(1.04); }
     100% { filter: blur(0.35px) brightness(1.00); }
+  }
+  /* Deleting burns the same way, but cold — grey ash, no flicker. */
+  .item.burning.ash::before { background: var(--char-bg-ash); }
+  .item.burning.ash::after {
+    background: var(--front-bg-ash);
+    animation: burn-rise 420ms cubic-bezier(.35,0,.55,1) forwards;
   }
   /* Once burnt, the empty row folds shut. Height is set inline by JS. */
   .item.collapsing {
@@ -613,11 +689,13 @@ function loadState() {
       const s = JSON.parse(raw);
       s.selected = s.selected || {};
       s.customItems = s.customItems || [];
+      s.hidden = s.hidden || {};
       s.mode = s.mode === 'shop' ? 'shop' : 'plan';
       return s;
     }
   } catch (e) {}
-  return { mode: 'plan', selected: {}, customItems: [], lastRemoved: null };
+  return { mode: 'plan', selected: {}, customItems: [], hidden: {},
+           lastRemoved: null, lastDeleted: null };
 }
 
 function saveState() {
@@ -626,8 +704,11 @@ function saveState() {
 
 let state = loadState();
 
+/* Deleted items stay in the file but are filtered out everywhere, so
+   "Restore" can bring them back. */
 function allItems() {
-  return MASTER_ITEMS.concat(state.customItems || []);
+  return MASTER_ITEMS.concat(state.customItems || [])
+    .filter(it => !state.hidden[it.id]);
 }
 
 function itemsBySection(list) {
@@ -654,15 +735,17 @@ function toggleSelect(id) {
   render();
 }
 
-/* Burn a row away, then run `done`. The row's height is pinned first so
-   it has something to collapse from. */
-function burnRow(el, done) {
+/* Burn a row away, then run `done`. `ash` picks the cold grey version
+   used for deleting. The row's height is pinned first so it has
+   something to collapse from. */
+function burnRow(el, ash, done) {
   if (!el || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     done();
     return;
   }
   el.style.height = el.offsetHeight + 'px';
   el.classList.add('burning');
+  if (ash) el.classList.add('ash');
   setTimeout(function () {
     el.classList.add('collapsing');
     el.style.height = '0px';
@@ -671,7 +754,7 @@ function burnRow(el, done) {
 }
 
 function pickUpItem(id, name) {
-  burnRow(rowEl(id), function () {
+  burnRow(rowEl(id), false, function () {
     delete state.selected[id];
     state.lastRemoved = { id, name };
     saveState();
@@ -684,6 +767,32 @@ function undoPickUp() {
   if (!state.lastRemoved) return;
   state.selected[state.lastRemoved.id] = true;
   state.lastRemoved = null;
+  saveState();
+  render();
+}
+
+function deleteItem(id, name) {
+  burnRow(rowEl(id), true, function () {
+    state.hidden[id] = true;
+    delete state.selected[id];
+    state.lastDeleted = { id, name };
+    saveState();
+    render();
+    showToast('Removed ' + name, undoDelete);
+  });
+}
+
+function undoDelete() {
+  if (!state.lastDeleted) return;
+  delete state.hidden[state.lastDeleted.id];
+  state.lastDeleted = null;
+  saveState();
+  render();
+}
+
+function restoreAllHidden() {
+  state.hidden = {};
+  state.lastDeleted = null;
   saveState();
   render();
 }
@@ -747,17 +856,31 @@ function newList() {
   window.scrollTo(0, 0);
 }
 
-function makeRow(it, checked, onClick) {
+function makeRow(it, checked, onClick, deletable) {
   const row = document.createElement('div');
   row.className = 'item' + (checked ? ' checked' : '');
   row.setAttribute('data-id', it.id);
-  row.innerHTML =
+
+  const tap = document.createElement('div');
+  tap.className = 'tap-zone';
+  tap.innerHTML =
     '<div class="box">' + (checked ? '&#10003;' : '') + '</div>' +
     '<div class="item-text">' +
       '<div class="item-name">' + escapeHtml(it.name) + '</div>' +
       (it.note ? '<div class="item-note">' + escapeHtml(it.note) + '</div>' : '') +
     '</div>';
-  row.onclick = onClick;
+  tap.onclick = onClick;
+  row.appendChild(tap);
+
+  if (deletable) {
+    const del = document.createElement('button');
+    del.className = 'del-btn';
+    del.innerHTML = '&times;';
+    del.setAttribute('aria-label', 'Remove ' + it.name + ' from the list');
+    del.onclick = e => { e.stopPropagation(); deleteItem(it.id, it.name); };
+    row.appendChild(del);
+  }
+
   return row;
 }
 
@@ -798,7 +921,8 @@ function render() {
       const card = document.createElement('div');
       card.className = 'card';
       secItems.forEach(it => {
-        card.appendChild(makeRow(it, !!state.selected[it.id], () => toggleSelect(it.id)));
+        card.appendChild(makeRow(it, !!state.selected[it.id],
+          () => toggleSelect(it.id), true));
       });
       sec.appendChild(card);
       main.appendChild(sec);
@@ -816,6 +940,16 @@ function render() {
     document.getElementById('customInput').addEventListener('keydown', e => {
       if (e.key === 'Enter') addCustomItem();
     });
+
+    const hiddenCount = Object.keys(state.hidden).length;
+    if (hiddenCount) {
+      const restore = document.createElement('button');
+      restore.className = 'restore-btn';
+      restore.textContent = 'Restore ' + hiddenCount + ' removed item' +
+        (hiddenCount === 1 ? '' : 's');
+      restore.onclick = restoreAllHidden;
+      main.appendChild(restore);
+    }
 
     const clearBtn = document.createElement('button');
     clearBtn.className = 'btn btn-secondary';
